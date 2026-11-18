@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>구경GO 업무자동화 도우미</title>
+<meta name="description" content="1인 사장님용 무료 업무자동화 도구: 매출 정리, 목록 정리, 견적서, 리뷰 답글, 가격 비교">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* 레이아웃: 휴대폰 한 줄 → 넓은 화면은 가운데 760px. 위쪽 고정 메뉴칩, 아래는 도구 화면 */
+:root{
+  --bg:#f3f2ee; --surface:#ffffff; --ink:#1c2433; --muted:#5f6b7d; --line:#dfdcd2;
+  --gold:#b8860b; --gold-soft:#f6ebcc; --navy:#1f3a5f; --navy-soft:#e6edf6;
+  --good:#1e7a46; --good-soft:#e2f3e8; --warn:#9a5b00; --warn-soft:#fbefd9; --bad:#b42318; --bad-soft:#fde7e5;
+  --display:"Black Han Sans","Noto Sans KR",sans-serif; --body:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#13161c; --surface:#1c212a; --ink:#ece9e1; --muted:#a3acba; --line:#2d3441;
+  --gold:#e3b54a; --gold-soft:#3a3120; --navy:#9dbde6; --navy-soft:#22303f;
+  --good:#6fd39a; --good-soft:#1b3326; --warn:#f0b65c; --warn-soft:#3a2d17; --bad:#ff8a80; --bad-soft:#3d1f1d; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#13161c; --surface:#1c212a; --ink:#ece9e1; --muted:#a3acba; --line:#2d3441;
+  --gold:#e3b54a; --gold-soft:#3a3120; --navy:#9dbde6; --navy-soft:#22303f;
+  --good:#6fd39a; --good-soft:#1b3326; --warn:#f0b65c; --warn-soft:#3a2d17; --bad:#ff8a80; --bad-soft:#3d1f1d; color-scheme:dark;}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6;word-break:keep-all;overflow-wrap:anywhere}
+.hero strong{text-wrap:balance}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px 40px}
+header.top{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;padding:12px 16px 6px;max-width:760px;margin:0 auto}
+.brand h1{font-family:var(--display);font-weight:400;font-size:22px;margin:0;letter-spacing:.5px}
+.brand small{display:block;font-size:12px;color:var(--muted);font-family:var(--body)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:6px 16px 12px;max-width:760px;margin:0 auto;scrollbar-width:none}
+.chip{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 14px;font:500 15px var(--body);cursor:pointer}
+.chip[aria-current="true"]{background:var(--navy);color:var(--surface);border-color:var(--navy)}
+:root[data-theme="dark"] .chip[aria-current="true"]{color:#13161c}
+section.view{display:none;padding-top:18px}
+section.view.on{display:block}
+h2{font-family:var(--display);font-weight:400;font-size:26px;margin:0 0 4px;text-wrap:balance}
+h3{font-size:17px;margin:0 0 8px}
+.lead{color:var(--muted);margin:0 0 16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:12px;margin-bottom:14px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--gold);border-radius:12px;padding:14px 16px;text-align:left;cursor:pointer;color:var(--ink);font-family:var(--body);display:grid;gap:4px}
+.tile:hover{border-color:var(--gold)}
+.tile .no{font-family:var(--display);color:var(--gold);font-size:20px}
+.tile b{font-size:17px}
+.tile span{color:var(--muted);font-size:14px}
+.hero{background:var(--navy);color:#fff;border-radius:16px;padding:18px;display:grid;gap:6px;margin-bottom:16px}
+:root[data-theme="dark"] .hero{background:#22344d}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .hero{background:#22344d}}
+.hero strong{font-family:var(--display);font-weight:400;font-size:24px;line-height:1.3}
+.hero p{margin:0;opacity:.9;font-size:15px}
+label{font-size:14px;color:var(--muted);display:grid;gap:4px}
+input,select,textarea{font:16px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+textarea{min-height:130px;resize:vertical}
+input:focus,select:focus,textarea:focus,button:focus-visible,.tile:focus-visible{outline:3px solid var(--gold);outline-offset:1px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row > *{flex:1 1 140px}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+button.b{font:700 15px var(--body);border-radius:10px;padding:11px 16px;cursor:pointer;border:1px solid var(--navy);background:var(--navy);color:#fff}
+:root[data-theme="dark"] button.b{color:#13161c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) button.b{color:#13161c} :root:not([data-theme="light"]) .chip[aria-current="true"]{color:#13161c}}
+button.b.ghost{background:transparent;color:var(--navy)}
+button.b.gold{background:var(--gold);border-color:var(--gold);color:#1c2433}
+button.b.sm{padding:6px 10px;font-size:13px}
+button.x{border:none;background:none;color:var(--muted);cursor:pointer;font-size:18px;padding:2px 6px}
+.hidden{display:none !important}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{background:var(--navy-soft);font-weight:700;white-space:nowrap}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.sum td{background:var(--good-soft);font-weight:700;color:var(--good)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.stat{background:var(--gold-soft);border-radius:12px;padding:12px}
+.stat small{display:block;color:var(--muted);font-size:13px}
+.stat b{font-size:22px;font-variant-numeric:tabular-nums}
+.bar{display:grid;grid-template-columns:90px 1fr auto;gap:8px;align-items:center;font-size:14px}
+.bar i{display:block;height:12px;border-radius:6px;background:var(--gold)}
+.bar .track{background:var(--line);border-radius:6px}
+.pill{display:inline-block;border-radius:999px;padding:2px 10px;font-size:13px;font-weight:700;white-space:nowrap}
+.pill.good{background:var(--good-soft);color:var(--good)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.pill.ex{background:var(--navy-soft);color:var(--navy)}
+.note{font-size:13px;color:var(--muted);margin:0}
+.reply{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:8px;background:var(--bg)}
+.reply q{color:var(--muted);font-size:14px}
+.reply p{margin:0;white-space:pre-wrap}
+.quote-sheet{background:#fff;color:#1c2433;border:1px solid #cfcab8;border-radius:6px;padding:18px;display:grid;gap:10px}
+.quote-sheet h4{font-family:var(--display);font-weight:400;font-size:28px;text-align:center;margin:0;letter-spacing:8px}
+.quote-sheet .big{border:2px solid #1c2433;padding:8px 10px;font-weight:700}
+.quote-sheet th{background:#eef1f5}
+.quote-sheet td,.quote-sheet th{border-bottom:1px solid #d9d4c5}
+.item{display:grid;grid-template-columns:1fr 70px 110px auto;gap:6px;align-items:center}
+footer{max-width:760px;margin:0 auto;padding:20px 16px 32px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90%}
+#toast.on{opacity:1}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+/* PC 화면: 왼쪽 고정 메뉴 + 입력(왼쪽)·결과(오른쪽) 2단 */
+@media (min-width:1000px){
+  header.top{position:fixed;left:0;top:0;bottom:0;width:250px;border-bottom:none;border-right:1px solid var(--line);padding-top:12px}
+  .brand{flex-direction:column;align-items:flex-start;padding:14px 20px 18px}
+  .brand h1{font-size:22px;line-height:1.3}
+  .chips{flex-direction:column;overflow:visible;padding:4px 14px}
+  .chip{border-radius:10px;text-align:left;padding:11px 14px;font-size:16px;border-color:transparent;background:transparent}
+  .chip:hover{background:var(--surface);border-color:var(--line)}
+  .chip[aria-current="true"]{background:var(--navy);border-color:var(--navy)}
+  .side-tip{display:block !important}
+  main.wrap,footer{margin-left:250px;max-width:1280px;padding-left:40px;padding-right:40px}
+  section.view{padding-top:32px}
+  section.view.on{display:grid;grid-template-columns:420px minmax(0,1fr);gap:0 24px;align-items:start}
+  section.view > h2,section.view > .lead{grid-column:1/-1}
+  h2{font-size:32px}
+  .in{grid-column:1}
+  .out{grid-column:2;grid-row:3 / span 8;position:sticky;top:20px}
+  .out .tbl{max-height:52vh;overflow:auto}
+  th{position:sticky;top:0;z-index:1}
+  #v-home.on{display:block}
+  .sync-badge{display:flex}
+  .tiles{grid-template-columns:repeat(3,1fr)}
+  .hero{padding:28px 32px}.hero strong{font-size:30px}
+  textarea{min-height:220px}
+  .item{grid-template-columns:1fr 80px 120px auto}
+}
+.side-tip{display:none;margin:18px 20px 0;font-size:13px;color:var(--muted);line-height:1.7}
+.side-tip kbd{font:12px var(--body);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;background:var(--surface)}
+/* 표지 */
+.cover{display:grid;gap:20px;background:#1b2f4d;color:#fff;border-radius:20px;padding:28px 24px;margin-bottom:18px;overflow:hidden}
+.cover .eyebrow{color:#e8b743;font-weight:700;font-size:14px;letter-spacing:.3px}
+.cover-title{font-family:var(--display);font-weight:400;font-size:34px;line-height:1.25;margin:6px 0 12px;text-wrap:balance;color:#fff}
+.cover-title em{font-style:normal;color:#e8b743}
+.cover p{opacity:.88;max-width:34em;margin:0 0 18px;font-size:16px}
+.cover small{display:block;margin-top:16px;opacity:.7;font-size:13px}
+.cover-art svg{width:100%;height:auto;max-width:440px;display:block;margin:0 auto}
+button.b.ghost-w{background:transparent;border-color:#ffffffaa;color:#fff}
+.feat{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 18px;padding:0;list-style:none}
+.feat li{border:1px solid #ffffff40;border-radius:999px;padding:3px 12px;font-size:13px}
+@media (min-width:1000px){
+  .cover{grid-template-columns:1.1fr .9fr;padding:48px 52px;align-items:center}
+  .cover-title{font-size:50px}
+  #v-help.on,#v-sync.on{display:grid}
+}
+/* 연동 */
+.sync-badge{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);margin:10px 20px 0}
+.sync-badge i{width:9px;height:9px;border-radius:50%;background:var(--warn);display:inline-block}
+.sync-badge.on i{background:var(--good)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:15px}
+.kv b{font-variant-numeric:tabular-nums}
+/* 사용법 */
+.help-card{display:grid;gap:14px}
+.help-card ol{margin:0;padding-left:0;list-style:none;display:grid;gap:10px;counter-reset:st}
+.help-card ol li{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;counter-increment:st}
+.help-card ol li::before{content:counter(st);width:26px;height:26px;border-radius:50%;background:#e5484d;color:#fff;font-weight:700;font-size:14px;display:grid;place-items:center}
+.shot{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--bg)}
+.shot img{width:100%;display:block}
+.tipbox{background:var(--gold-soft);border-radius:10px;padding:10px 12px;font-size:14px}
+.help-nav{display:flex;flex-wrap:wrap;gap:6px}
+@media (min-width:1000px){
+  #v-help.on{grid-template-columns:1fr}
+  .help-card{grid-template-columns:360px minmax(0,1fr);align-items:start}
+  .help-card h3{grid-column:1/-1;font-size:20px}
+}
+#news{position:fixed;inset:0;background:rgba(10,14,20,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
+#news .box{background:var(--surface);color:var(--ink);border-radius:16px;padding:24px;max-width:440px;width:100%;display:grid;gap:12px;border-top:6px solid var(--gold)}
+#news h3{font-family:var(--display);font-weight:400;font-size:24px;margin:0}
+#news ul{margin:0;padding-left:20px}
+@media (max-width:420px){.item{grid-template-columns:1fr 56px 90px auto}.bar{grid-template-columns:70px 1fr auto}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19" fill="#c9972a"/><circle cx="20" cy="20" r="15.5" fill="none" stroke="#fff3cf" stroke-width="1.5"/><text x="20" y="25" text-anchor="middle" font-family="Black Han Sans, sans-serif" font-size="13" fill="#1c2433">GO</text></svg>
+    <div><h1>구경GO 업무자동화 도우미</h1><small>사장님 반복 작업, 버튼 몇 번으로 끝</small></div>
+  </div>
+  <nav class="chips" id="chips" aria-label="메뉴">
+    <button class="chip" data-go="home">홈</button>
+    <button class="chip" data-go="sales">① 매출 정리</button>
+    <button class="chip" data-go="list">② 목록 정리</button>
+    <button class="chip" data-go="quote">③ 견적서</button>
+    <button class="chip" data-go="review">④ 리뷰 답글</button>
+    <button class="chip" data-go="price">⑤ 가격 비교</button>
+    <button class="chip" data-go="sync">⑥ 백업·옮기기</button>
+    <button class="chip" data-go="help">사용법</button>
+  </nav>
+  <p class="side-tip">단축키<br><kbd>Ctrl</kbd>+<kbd>Enter</kbd> 정리·만들기 실행<br><kbd>Alt</kbd>+<kbd>1</kbd>~<kbd>6</kbd> 메뉴 이동<br><kbd>Alt</kbd>+<kbd>0</kbd> 홈 · <kbd>Alt</kbd>+<kbd>H</kbd> 사용법</p>
+  <p class="sync-badge" id="sync-badge"><i></i><span>이 기기에 저장 중 · <a href="#sync" style="color:inherit">백업하기</a></span></p>
+</header>
+
+<main class="wrap">
+
+<!-- 홈 -->
+<section class="view" id="v-home">
+  <div class="cover">
+    <div>
+      <span class="eyebrow">구경GO · 1인 사장님 업무 도구</span>
+      <h2 class="cover-title">반복 작업은<br><em>도우미</em>에게 맡기세요</h2>
+      <p>매출 정리, 목록 정리, 견적서, 리뷰 답글, 가격 비교까지. 설치 없이 인터넷 창에서 바로 쓰는 업무자동화 프로그램이에요.</p>
+      <ul class="feat"><li>설치 없음</li><li>추가 비용 없음</li><li>백업으로 기기 옮기기</li><li>엑셀로 바로 옮기기</li></ul>
+      <div class="btns"><button class="b gold" data-go="sales">시작하기</button><button class="b ghost-w" data-go="help">사용법 보기</button></div>
+      <small>v1.3 깃허브판 · 작성자 윤남주</small>
+    </div>
+    <div class="cover-art" aria-hidden="true">
+      <svg viewBox="0 0 440 340">
+        <rect x="34" y="44" width="270" height="206" rx="14" fill="#2b4670" transform="rotate(-7 170 147)"/>
+        <rect x="78" y="56" width="304" height="226" rx="14" fill="#f7f4ec"/>
+        <rect x="78" y="56" width="304" height="30" rx="14" fill="#e8e1cf"/><rect x="78" y="72" width="304" height="14" fill="#e8e1cf"/>
+        <circle cx="98" cy="71" r="5" fill="#e5484d"/><circle cx="114" cy="71" r="5" fill="#e8b743"/><circle cx="130" cy="71" r="5" fill="#2e9e5b"/>
+        <rect x="96" y="100" width="268" height="22" rx="4" fill="#dbe5f1"/>
+        <rect x="104" y="107" width="40" height="8" rx="3" fill="#1b2f4d"/><rect x="176" y="107" width="56" height="8" rx="3" fill="#1b2f4d"/><rect x="312" y="107" width="44" height="8" rx="3" fill="#1b2f4d"/>
+        <g fill="#c9c2ad"><rect x="104" y="134" width="34" height="7" rx="3"/><rect x="176" y="134" width="70" height="7" rx="3"/><rect x="306" y="134" width="50" height="7" rx="3"/>
+        <rect x="104" y="154" width="34" height="7" rx="3"/><rect x="176" y="154" width="54" height="7" rx="3"/><rect x="316" y="154" width="40" height="7" rx="3"/>
+        <rect x="104" y="174" width="34" height="7" rx="3"/><rect x="176" y="174" width="62" height="7" rx="3"/><rect x="300" y="174" width="56" height="7" rx="3"/></g>
+        <rect x="96" y="192" width="268" height="24" rx="4" fill="#dff1e5"/><rect x="176" y="200" width="36" height="8" rx="3" fill="#1e7a46"/><rect x="290" y="200" width="66" height="8" rx="3" fill="#1e7a46"/>
+        <g fill="#c9972a"><rect x="104" y="250" width="22" height="18" rx="3"/><rect x="132" y="238" width="22" height="30" rx="3"/><rect x="160" y="228" width="22" height="40" rx="3"/><rect x="188" y="244" width="22" height="24" rx="3"/></g>
+        <circle cx="356" cy="262" r="54" fill="#c9972a"/><circle cx="356" cy="262" r="44" fill="none" stroke="#fff3cf" stroke-width="3"/>
+        <text x="356" y="276" text-anchor="middle" font-family="Black Han Sans, sans-serif" font-size="38" font-weight="900" fill="#1c2433">GO</text>
+        <circle cx="66" cy="262" r="26" fill="#2e9e5b"/><path d="M54 262 l9 9 l17 -18" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  </div>
+  <div class="tiles">
+    <button class="tile" data-go="sales"><span class="no">01</span><b>흩어진 매출, 한 장으로</b><span>쿠팡·스마트스토어·카드 매출 엑셀을 올리면 날짜·판매처별로 합쳐 줘요</span></button>
+    <button class="tile" data-go="list"><span class="no">02</span><b>웹페이지 목록 → 엑셀</b><span>복사한 글 목록을 줄 정리·중복 제거·날짜별 요약까지</span></button>
+    <button class="tile" data-go="quote"><span class="no">03</span><b>견적서 자동 작성</b><span>품목·수량·단가만 넣으면 부가세·합계·한글 금액까지 계산</span></button>
+    <button class="tile" data-go="review"><span class="no">04</span><b>리뷰 답글 초안</b><span>칭찬·불만 리뷰를 구분해 답글 초안을 한 번에</span></button>
+    <button class="tile" data-go="price"><span class="no">05</span><b>경쟁사 가격 비교</b><span>내 가격과 경쟁사 가격을 적어 두면 비싼 상품을 바로 표시</span></button>
+    <button class="tile" data-go="sync"><span class="no">06</span><b>백업·기기 옮기기</b><span>백업 파일이나 코드로 PC↔휴대폰 기록을 옮겨요</span></button>
+  </div>
+</section>
+
+<!-- ① 매출 -->
+<section class="view" id="v-sales">
+  <h2>흩어진 매출, 한 장으로</h2>
+  <p class="lead">판매처에서 내려받은 엑셀(.xlsx)이나 CSV 파일을 올리세요. 날짜와 금액 칸을 자동으로 찾아요.</p>
+  <div class="card in">
+    <h3>1. 파일 올리기</h3>
+    <label for="s-file">매출 파일 (여러 개 가능)<input type="file" id="s-file" accept=".xlsx,.xls,.csv" multiple></label>
+    <div id="s-map" class="hidden" style="display:grid;gap:10px"></div>
+    <p class="note" id="s-xlsx-note">엑셀 읽기 기능을 불러오는 중…</p>
+  </div>
+  <div class="card in">
+    <h3>2. 직접 입력 (현금·계좌이체 등)</h3>
+    <div class="row">
+      <label for="s-d">날짜<input type="date" id="s-d"></label>
+      <label for="s-w">어디서<input id="s-w" placeholder="예: 매장 현금"></label>
+      <label for="s-a">금액(원)<input id="s-a" inputmode="numeric" placeholder="예: 52000"></label>
+    </div>
+    <div class="btns"><button class="b" id="s-add">추가</button></div>
+  </div>
+  <div class="card out">
+    <div class="row" style="align-items:end">
+      <h3 style="flex:2 1 200px;margin:0">3. 한 장 정리 결과 <span class="pill ex hidden" id="s-ex">예시 데이터</span></h3>
+      <label for="s-month">월 선택<select id="s-month"></select></label>
+    </div>
+    <div class="stats" id="s-stats"></div>
+    <div id="s-bars" style="display:grid;gap:6px"></div>
+    <div class="tbl"><table id="s-tbl"></table></div>
+    <div class="btns">
+      <button class="b gold" id="s-copy">표 복사 (엑셀에 붙여넣기)</button>
+      <button class="b hidden dl" id="s-save">엑셀 파일로 저장</button>
+      <button class="b ghost" id="s-clear">모두 지우기</button>
+    </div>
+  </div>
+</section>
+
+<!-- ② 목록 -->
+<section class="view" id="v-list">
+  <h2>웹페이지 목록 → 엑셀 자동 정리</h2>
+  <p class="lead">블로그·쇼핑몰 목록 화면을 마우스로 끌어 복사(Ctrl+C)한 뒤 아래에 붙여넣으세요(Ctrl+V).</p>
+  <div class="card in">
+    <label for="l-in">복사한 내용<textarea id="l-in"></textarea></label>
+    <div class="row">
+      <label><span><input type="checkbox" id="l-dup" checked style="width:auto"> 중복 줄 빼기</span></label>
+      <label><span><input type="checkbox" id="l-short" checked style="width:auto"> 5글자 미만 줄 빼기</span></label>
+    </div>
+    <label for="l-kw">이 단어가 있는 줄만 (비우면 전부)<input id="l-kw" placeholder="예: 후기"></label>
+    <div class="btns"><button class="b" id="l-run">정리하기</button><button class="b ghost" id="l-sample">예시 넣기</button></div>
+  </div>
+  <div class="card out">
+    <h3>정리 결과</h3>
+    <div class="stats" id="l-stats"></div>
+    <div class="tbl"><table id="l-tbl"></table></div>
+    <h3>날짜별 글 수</h3>
+    <div class="tbl"><table id="l-sum"></table></div>
+    <div class="btns"><button class="b gold" id="l-copy">표 복사</button><button class="b hidden dl" id="l-save">엑셀 파일로 저장</button></div>
+    <p class="note">이 도구는 붙여넣은 글만 정리해요. 다른 사이트에 직접 접속해 긁어오지 않으니 사이트에 부담을 주지 않아요.</p>
+  </div>
+</section>
+
+<!-- ③ 견적서 -->
+<section class="view" id="v-quote">
+  <h2>견적서 자동 작성</h2>
+  <p class="lead">품목만 넣으면 공급가액·부가세·합계와 한글 금액이 자동으로 채워져요.</p>
+  <div class="card in">
+    <div class="row">
+      <label for="q-me">우리 가게 이름<input id="q-me" placeholder="예: 구경GO 카페"></label>
+      <label for="q-tel">연락처<input id="q-tel" placeholder="예: 010-0000-0000"></label>
+    </div>
+    <div class="row">
+      <label for="q-to">받는 분<input id="q-to" placeholder="예: ○○사무실"></label>
+      <label for="q-vat">부가세<select id="q-vat"><option value="add">단가에 부가세 별도 (10% 더함)</option><option value="inc">단가에 부가세 포함</option><option value="none">부가세 없음 (간이·면세)</option></select></label>
+    </div>
+    <div style="display:grid;gap:6px" id="q-items"></div>
+    <div class="btns"><button class="b ghost sm" id="q-add">+ 품목 추가</button></div>
+    <label for="q-memo">메모<input id="q-memo" placeholder="예: 견적 유효기간 14일"></label>
+  </div>
+  <div class="card out">
+    <h3>미리보기</h3>
+    <div class="quote-sheet" id="q-sheet"></div>
+    <div class="btns"><button class="b gold" id="q-copy">견적 내용 복사</button><button class="b hidden dl" id="q-save">엑셀 파일로 저장</button></div>
+  </div>
+</section>
+
+<!-- ④ 리뷰 -->
+<section class="view" id="v-review">
+  <h2>리뷰 답글 초안</h2>
+  <p class="lead">리뷰를 붙여넣으면 칭찬·보통·불만을 구분해서 답글 초안을 만들어요. 그대로 올리지 말고 한 번 읽고 가게 상황에 맞게 고쳐 쓰세요.</p>
+  <div class="card in">
+    <div class="row">
+      <label for="r-shop">가게 이름<input id="r-shop" placeholder="예: 구경GO 카페"></label>
+      <label for="r-tone">말투<select id="r-tone"><option value="warm">다정하게</option><option value="polite">정중하게</option></select></label>
+    </div>
+    <label for="r-in">리뷰 (한 줄에 하나씩)<textarea id="r-in"></textarea></label>
+    <div class="btns"><button class="b" id="r-run">답글 만들기</button><button class="b ghost" id="r-sample">예시 넣기</button></div>
+  </div>
+  <div class="out" style="display:grid;gap:10px"><div id="r-out" style="display:grid;gap:10px"></div>
+  <p class="note" id="r-ai-note"></p></div>
+</section>
+
+<!-- ⑤ 가격 -->
+<section class="view" id="v-price">
+  <h2>경쟁사 가격 비교</h2>
+  <p class="lead">경쟁사 가격을 확인할 때마다 적어 두세요. 내가 더 비싼 상품이 위로 올라와요.</p>
+  <div class="card in">
+    <div class="row">
+      <label for="p-name">상품명<input id="p-name" placeholder="예: 청귤청 500ml"></label>
+      <label for="p-mine">내 가격(원)<input id="p-mine" inputmode="numeric"></label>
+    </div>
+    <div class="row">
+      <label for="p-who">경쟁사<input id="p-who" placeholder="예: A스토어"></label>
+      <label for="p-their">경쟁사 가격(원)<input id="p-their" inputmode="numeric"></label>
+    </div>
+    <div class="btns"><button class="b" id="p-add">기록하기</button></div>
+  </div>
+  <div class="card out">
+    <h3>비교 결과 <span class="pill ex hidden" id="p-ex">예시 데이터</span></h3>
+    <div class="stats" id="p-stats"></div>
+    <div class="tbl"><table id="p-tbl"></table></div>
+    <div class="btns"><button class="b gold" id="p-copy">표 복사</button><button class="b ghost" id="p-clear">모두 지우기</button></div>
+    <p class="note">기준: 경쟁사보다 3% 넘게 비싸면 '비쌈', 3% 이내면 '비슷', 더 싸면 '저렴'으로 표시해요.</p>
+  </div>
+</section>
+
+<section class="view" id="v-sync">
+  <h2>백업·기기 옮기기</h2>
+  <p class="lead">기록은 지금 쓰는 기기에 저장돼요. 다른 기기로 옮기거나 혹시 모를 때를 대비해 백업해 두세요.</p>
+  <div class="card in">
+    <h3>방법 1. 백업 파일 (추천)</h3>
+    <p class="note" style="font-size:15px;color:var(--ink)">내 기록을 파일 하나로 저장해요. USB·카톡 PC버전·메일로 옮긴 뒤, 다른 기기에서 그 파일을 고르면 그대로 불러와요.</p>
+    <div class="btns"><button class="b" id="y-save">백업 파일 저장</button></div>
+    <label for="y-file">백업 파일 불러오기<input type="file" id="y-file" accept=".txt"></label>
+    <div id="y-state"><span class="pill warn">기록은 이 기기 인터넷 창에 저장돼요</span></div>
+  </div>
+  <div class="card in">
+    <h3>방법 2. 백업 코드 (휴대폰에 편해요)</h3>
+    <p class="note" style="font-size:15px;color:var(--ink)">코드를 복사해 카톡 '나와의 채팅'이나 메모로 보내고, 다른 기기에서 붙여넣으면 똑같이 옮겨져요.</p>
+    <div class="btns"><button class="b gold" id="y-copy">백업 코드 복사</button></div>
+    <label for="y-in">다른 기기에서 받은 백업 코드<textarea id="y-in" style="min-height:90px" placeholder="GGO로 시작하는 코드를 붙여넣으세요"></textarea></label>
+    <div class="btns"><button class="b" id="y-restore">이 기기로 불러오기</button></div>
+  </div>
+  <div class="card out">
+    <h3>지금 이 기기의 기록</h3>
+    <div class="kv" id="y-sum"></div>
+    <p class="note">옮겨지는 것: 매출 기록, 가격 기록, 견적서 정보(가게 이름·품목).<br>옮겨지지 않는 것: 목록 정리·리뷰 입력칸(한 번 쓰고 끝나는 내용).</p>
+    <p class="note">기록은 각자 기기에만 저장돼서, 앱 주소를 다른 사람에게 공유해도 내 기록은 보이지 않아요. 인터넷 사용 기록을 지우면 기록도 지워지니 가끔 백업해 두세요.</p>
+  </div>
+</section>
+<section class="view" id="v-help">
+  <h2>사용법</h2>
+  <p class="lead">메뉴마다 그림 속 빨간 번호 순서대로 따라 하시면 돼요.</p>
+  <div class="card"><h3>처음 한 번만</h3>
+    <div class="help-card" style="grid-template-columns:1fr"><ol>
+      <li><span>PC에서 이 앱 주소를 열고 <b>Ctrl+D</b>를 눌러 즐겨찾기에 넣어 두세요. 다음부터 즐겨찾기에서 바로 열려요.</span></li>
+      <li><span>로그인은 필요 없어요. 기록은 지금 쓰는 기기에 저장되고, 다른 기기로 옮길 땐 ⑥ 백업·옮기기를 써요.</span></li>
+      <li><span>처음에 보이는 숫자는 <b>예시 데이터</b>예요. 내 기록을 하나라도 넣으면 예시는 사라져요.</span></li>
+    </ol></div>
+    <div class="help-nav"><button class="b ghost sm" data-hj="h-sales">① 매출 정리</button><button class="b ghost sm" data-hj="h-list">② 목록 정리</button><button class="b ghost sm" data-hj="h-quote">③ 견적서</button><button class="b ghost sm" data-hj="h-review">④ 리뷰 답글</button><button class="b ghost sm" data-hj="h-price">⑤ 가격 비교</button><button class="b ghost sm" data-hj="h-sync">⑥ 백업·옮기기</button></div>
+  </div>
+  <div class="card" id="h-sales"><div class="help-card"><h3>① 매출 정리</h3><div style="display:grid;gap:12px"><ol><li><span>판매처(쿠팡·스마트스토어 등)에서 매출 엑셀이나 CSV를 내려받아 <b>파일 선택</b>을 눌러 올려요. 여러 개를 한꺼번에 골라도 돼요.</span></li><li><span>파일마다 <b>날짜 칸·금액 칸</b>이 자동으로 골라져요. 맞는지 보고, 판매처 이름을 확인한 뒤 <b>이 파일 합치기</b>를 눌러요.</span></li><li><span>오른쪽 위 <b>월 선택</b>에서 보고 싶은 달을 고르면 합계·판매처별 막대·표가 바뀌어요.</span></li><li><span><b>표 복사</b>를 누르고 엑셀 빈칸에 붙여넣기(Ctrl+V) 하면 끝. 엑셀 파일로 저장도 돼요.</span></li></ol><p class="tipbox">현금·계좌이체처럼 파일이 없는 매출은 왼쪽 <b>2. 직접 입력</b>에 날짜·금액을 넣고 추가하세요.</p><div class="btns"><button class="b sm" data-go="sales">① 매출 정리 열기</button></div></div><figure class="shot" style="margin:0"><img src="img/help-sales.jpg" alt="① 매출 정리 화면 그림, 빨간 번호가 순서를 표시" loading="lazy"></figure></div></div>
+  <div class="card" id="h-list"><div class="help-card"><h3>② 목록 정리</h3><div style="display:grid;gap:12px"><ol><li><span>블로그·쇼핑몰 목록 화면을 마우스로 끌어 선택하고 Ctrl+C로 복사한 뒤, 큰 입력칸에 Ctrl+V로 붙여넣어요.</span></li><li><span><b>정리하기</b>를 누르거나 Ctrl+Enter를 눌러요.</span></li><li><span>오른쪽에 번호·날짜·제목으로 나뉜 표와 날짜별 글 수가 나와요.</span></li><li><span><b>표 복사</b>로 엑셀에 붙여넣어요.</span></li></ol><p class="tipbox">특정 단어(예: 후기)가 들어간 줄만 보고 싶으면 "이 단어가 있는 줄만" 칸에 적으세요.</p><div class="btns"><button class="b sm" data-go="list">② 목록 정리 열기</button></div></div><figure class="shot" style="margin:0"><img src="img/help-list.jpg" alt="② 목록 정리 화면 그림, 빨간 번호가 순서를 표시" loading="lazy"></figure></div></div>
+  <div class="card" id="h-quote"><div class="help-card"><h3>③ 견적서</h3><div style="display:grid;gap:12px"><ol><li><span>우리 가게 이름·연락처·받는 분을 적어요. 한 번 적으면 다음에도 기억해요.</span></li><li><span>품목·수량·단가를 적어요. <b>+ 품목 추가</b>로 줄을 늘려요.</span></li><li><span>오른쪽 미리보기에 공급가액·부가세·합계와 한글 금액이 바로 채워져요.</span></li><li><span><b>견적 내용 복사</b>로 문자·카톡·엑셀에 붙여넣어요.</span></li></ol><p class="tipbox">부가세 칸에서 "별도/포함/없음"을 고르면 계산이 알맞게 바뀌어요.</p><div class="btns"><button class="b sm" data-go="quote">③ 견적서 열기</button></div></div><figure class="shot" style="margin:0"><img src="img/help-quote.jpg" alt="③ 견적서 화면 그림, 빨간 번호가 순서를 표시" loading="lazy"></figure></div></div>
+  <div class="card" id="h-review"><div class="help-card"><h3>④ 리뷰 답글</h3><div style="display:grid;gap:12px"><ol><li><span>가게 이름과 말투(다정하게/정중하게)를 고르고, 리뷰를 한 줄에 하나씩 붙여넣어요.</span></li><li><span><b>답글 만들기</b>를 눌러요.</span></li><li><span>리뷰마다 <b>칭찬·보통·불만</b> 표시와 답글 초안이 나와요. 불만은 빨간색이라 먼저 챙기기 좋아요.</span></li><li><span><b>답글 복사</b>를 눌러 스토어 답글 칸에 붙여넣어요.</span></li></ol><p class="tipbox">올리기 전에 꼭 한 번 읽고 가게 상황에 맞게 고치세요. "AI로 다듬기"는 처음 누를 때 사용 허락을 물어요.</p><div class="btns"><button class="b sm" data-go="review">④ 리뷰 답글 열기</button></div></div><figure class="shot" style="margin:0"><img src="img/help-review.jpg" alt="④ 리뷰 답글 화면 그림, 빨간 번호가 순서를 표시" loading="lazy"></figure></div></div>
+  <div class="card" id="h-price"><div class="help-card"><h3>⑤ 가격 비교</h3><div style="display:grid;gap:12px"><ol><li><span>상품명, 내 가격, 경쟁사 이름, 경쟁사 가격을 적어요.</span></li><li><span><b>기록하기</b>를 눌러요. 같은 상품을 다시 기록하면 최신 가격으로 바뀌어요.</span></li><li><span>상태가 <b>비쌈(빨강)·비슷(주황)·저렴(초록)</b>으로 표시되고, 비싼 상품이 맨 위로 올라와요.</span></li><li><span><b>표 복사</b>로 엑셀에 옮겨 보관해요.</span></li></ol><p class="tipbox">경쟁사보다 3% 넘게 비싸면 "비쌈"으로 표시돼요.</p><div class="btns"><button class="b sm" data-go="price">⑤ 가격 비교 열기</button></div></div><figure class="shot" style="margin:0"><img src="img/help-price.jpg" alt="⑤ 가격 비교 화면 그림, 빨간 번호가 순서를 표시" loading="lazy"></figure></div></div>
+  <div class="card" id="h-sync"><div class="help-card"><h3>⑥ 백업·옮기기</h3><div style="display:grid;gap:12px"><ol><li><span><b>백업 파일 저장</b>을 누르면 내려받기 폴더에 "구경GO_백업_날짜.txt" 파일이 생겨요.</span></li><li><span>휴대폰으로 옮길 땐 <b>백업 코드 복사</b>를 눌러 카톡 '나와의 채팅'에 붙여넣어 보내요.</span></li><li><span>다른 기기에서 앱을 열고 백업 코드를 붙여넣은 뒤 <b>이 기기로 불러오기</b>, 또는 백업 파일을 골라요.</span></li></ol><p class="tipbox">옮겨지는 것: 매출 기록, 가격 기록, 견적서 정보. 불러오면 그 기기의 기존 기록은 백업 내용으로 바뀌어요.</p><div class="btns"><button class="b sm" data-go="sync">⑥ 백업·옮기기 열기</button></div></div><figure class="shot" style="margin:0"><img src="img/help-sync.jpg" alt="백업·옮기기 화면 그림, 빨간 번호가 순서를 표시" loading="lazy"></figure></div></div>
+  <div class="card"><h3>자주 묻는 질문</h3>
+    <div class="kv"><b>Q</b><span>엑셀 파일로 저장 버튼이 안 보여요.</span><b>A</b><span>엑셀 기능을 불러오지 못하면 버튼이 숨겨져요. 인터넷 연결을 확인하고 새로고침하세요. 그래도 안 되면 "표 복사" 후 엑셀에 붙여넣으세요.</span>
+    <b>Q</b><span>기록이 사라졌어요.</span><b>A</b><span>인터넷 사용 기록을 지우거나 다른 인터넷 창(크롬↔엣지)으로 열면 기록이 안 보여요. 가끔 백업 파일을 저장해 두세요.</span>
+    <b>Q</b><span>돈이 드나요?</span><b>A</b><span>무료예요. 회원가입·로그인도 필요 없어요.</span></div>
+  </div>
+</section>
+</main>
+<footer>
+  작성자 윤남주 · v1.3 깃허브판<br>
+  © 2026 구경GO. 무단 복제·재판매 금지
+</footer>
+<div id="news" class="hidden" role="dialog" aria-modal="true" aria-labelledby="news-t"><div class="box">
+  <h3 id="news-t">v1.3 깃허브판 안내</h3>
+  <ul><li>로그인 없이 누구나 무료로 쓸 수 있어요.</li>
+  <li><b>엑셀 파일로 저장</b>: 버튼을 누르면 내려받기 폴더에 저장돼요.</li>
+  <li><b>백업 파일</b>: 기록을 파일로 저장하고 다른 기기에서 불러와요.</li>
+  <li>처음이면 왼쪽(휴대폰은 위쪽) <b>사용법</b>을 눌러 보세요.</li></ul>
+  <div class="btns"><button class="b gold" id="news-ok">확인했어요</button></div></div></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const P='ggo-auto-';
+const store={get(k,d){try{const v=localStorage.getItem(P+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(P+k,JSON.stringify(v))}catch(e){}}};
+const num=v=>{const n=Number(String(v??'').replace(/[^0-9.\-]/g,''));return isFinite(n)?n:0};
+const won=n=>Math.round(n).toLocaleString('ko-KR')+'원';
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),2200)}
+async function copy(text){
+  try{await navigator.clipboard.writeText(text);toast('복사했어요. 엑셀이나 메모장에 붙여넣으세요.');return}catch(e){}
+  const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();
+  let ok=false;try{ok=document.execCommand('copy')}catch(e){}ta.remove();
+  toast(ok?'복사했어요.':'복사가 막혔어요. 표를 길게 눌러 직접 복사해 주세요.');
+}
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const tsv=rows=>rows.map(r=>r.map(c=>String(c).replace(/\t|\n/g,' ')).join('\t')).join('\n');
+
+/* 엑셀 저장 (downloads 기능이 되는 화면에서만 버튼이 보여요) */
+/* 깃허브판: 브라우저 기본 내려받기로 저장 */
+function saveFile(name,data,type){
+  try{const blob=data instanceof Blob?data:new Blob([data],{type:type||'application/octet-stream'});
+    const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),4000);toast('내려받기 폴더에 저장했어요.')}
+  catch(e){toast('저장하지 못했어요. 표 복사를 써 주세요.')}
+}
+const XLSX_TYPE='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+if(window.XLSX)document.querySelectorAll('.dl').forEach(b=>b.classList.remove('hidden'));
+document.querySelectorAll('.dl-any').forEach(b=>b.classList.remove('hidden'));
+function saveXlsx(name,rows){
+  if(!window.XLSX){toast('엑셀 기능을 못 불러왔어요. 표 복사를 써 주세요.');return}
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'정리');
+  saveFile(name,new Blob([XLSX.write(wb,{bookType:'xlsx',type:'array'})],{type:XLSX_TYPE}));
+}
+
+/* 화면 이동 */
+const views=['home','sales','list','quote','review','price','sync','help'];
+function go(v){if(!views.includes(v))v='home';
+  views.forEach(x=>$('#v-'+x).classList.toggle('on',x===v));
+  document.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-current',c.dataset.go===v?'true':'false'));
+  if(location.hash!=='#'+v){try{history.replaceState(null,'','#'+v)}catch(e){location.hash=v}}
+  window.scrollTo(0,0);}
+document.addEventListener('click',e=>{const t=e.target.closest('[data-go]');if(t)go(t.dataset.go)});
+window.addEventListener('hashchange',()=>go(location.hash.slice(1)));
+
+/* ---------- ① 매출 ---------- */
+let sales=store.get('sales',null);let salesEx=false;
+if(!sales){salesEx=true;sales=[
+ ['2026-11-02','쿠팡',1284000],['2026-11-05','스마트스토어',936500],['2026-11-08','세금계산서',1650000],
+ ['2026-11-12','카드 매출',487000],['2026-11-18','크몽',720000],['2026-11-25','유튜브',312500]].map(r=>({d:r[0],w:r[1],a:r[2]}));}
+function saveSales(){salesEx=false;store.set('sales',sales);renderSales();touch()}
+function normDate(v){
+  if(typeof v==='number'&&v>20000&&v<80000){const d=new Date(Math.round((v-25569)*864e5));return d.toISOString().slice(0,10)}
+  const s=String(v??'').trim();const m=s.match(/(20\d{2})[.\-\/년\s]*(\d{1,2})[.\-\/월\s]*(\d{1,2})/);
+  if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');return '';
+}
+function renderSales(){
+  $('#s-ex').classList.toggle('hidden',!salesEx);
+  const months=[...new Set(sales.map(r=>r.d.slice(0,7)))].sort().reverse();
+  const sel=$('#s-month');const cur=sel.value;
+  sel.innerHTML='<option value="">전체 기간</option>'+months.map(m=>`<option value="${m}">${m.replace('-','년 ')}월</option>`).join('');
+  if(months.includes(cur))sel.value=cur;else if(!cur&&months[0])sel.value=months[0];
+  const m=sel.value;const rows=sales.filter(r=>!m||r.d.startsWith(m)).sort((a,b)=>a.d.localeCompare(b.d));
+  const total=rows.reduce((s,r)=>s+r.a,0);const by={};rows.forEach(r=>by[r.w]=(by[r.w]||0)+r.a);
+  const ent=Object.entries(by).sort((a,b)=>b[1]-a[1]);const max=ent[0]?ent[0][1]:1;
+  $('#s-stats').innerHTML=`<div class="stat"><small>합계</small><b>${won(total)}</b></div><div class="stat"><small>건수</small><b>${rows.length}건</b></div><div class="stat"><small>제일 많은 곳</small><b>${ent[0]?esc(ent[0][0]):'-'}</b></div>`;
+  $('#s-bars').innerHTML=ent.map(([w,a])=>`<div class="bar"><span>${esc(w)}</span><div class="track"><i style="width:${Math.max(2,a/max*100)}%"></i></div><span class="n">${won(a)}</span></div>`).join('');
+  $('#s-tbl').innerHTML='<tr><th>날짜</th><th>어디서</th><th class="n">금액</th><th></th></tr>'+
+   rows.map(r=>`<tr><td>${r.d.slice(5).replace('-','.')}</td><td>${esc(r.w)}</td><td class="n">${r.a.toLocaleString('ko-KR')}</td><td><button class="x" data-del="${sales.indexOf(r)}" aria-label="삭제">×</button></td></tr>`).join('')+
+   `<tr class="sum"><td></td><td>합계</td><td class="n">${total.toLocaleString('ko-KR')}</td><td></td></tr>`;
+}
+$('#s-month').addEventListener('change',renderSales);
+$('#s-tbl').addEventListener('click',e=>{const b=e.target.closest('[data-del]');if(!b)return;if(salesEx){sales=[]}else sales.splice(+b.dataset.del,1);saveSales()});
+$('#s-add').addEventListener('click',()=>{
+  const d=$('#s-d').value,w=$('#s-w').value.trim()||'직접 입력',a=num($('#s-a').value);
+  if(!d||!a){toast('날짜와 금액을 넣어 주세요.');return}
+  if(salesEx)sales=[];sales.push({d,w,a});$('#s-a').value='';saveSales();toast('추가했어요.');
+});
+$('#s-clear').addEventListener('click',()=>{if($('#s-clear').dataset.sure){sales=[];saveSales();$('#s-clear').textContent='모두 지우기';delete $('#s-clear').dataset.sure;toast('지웠어요.')}else{$('#s-clear').dataset.sure='1';$('#s-clear').textContent='한 번 더 누르면 지워져요';setTimeout(()=>{delete $('#s-clear').dataset.sure;$('#s-clear').textContent='모두 지우기'},3000)}});
+const salesRows=()=>{const m=$('#s-month').value;const rows=sales.filter(r=>!m||r.d.startsWith(m)).sort((a,b)=>a.d.localeCompare(b.d));return [['날짜','어디서','금액'],...rows.map(r=>[r.d,r.w,r.a]),['','합계',rows.reduce((s,r)=>s+r.a,0)]]};
+$('#s-copy').addEventListener('click',()=>copy(tsv(salesRows())));
+$('#s-save').addEventListener('click',()=>saveXlsx('매출정리_'+($('#s-month').value||'전체')+'.xlsx',salesRows()));
+$('#s-xlsx-note').textContent=window.XLSX?'엑셀·CSV 모두 읽을 수 있어요. 파일은 이 기기 안에서만 읽고 어디에도 보내지 않아요.':'엑셀 읽기 기능을 못 불러왔어요. CSV 파일은 읽을 수 있어요.';
+function parseCSV(text){const out=[];let row=[],cell='',q=false;
+  for(let i=0;i<text.length;i++){const c=text[i];
+    if(q){if(c==='"'){if(text[i+1]==='"'){cell+='"';i++}else q=false}else cell+=c}
+    else if(c==='"')q=true;else if(c===','){row.push(cell);cell=''}else if(c==='\n'){row.push(cell);out.push(row);row=[];cell=''}else if(c!=='\r')cell+=c;}
+  if(cell||row.length){row.push(cell);out.push(row)}return out}
+function guess(head,words){let best=-1;head.forEach((h,i)=>{const s=String(h);if(best<0&&words.some(w=>s.includes(w)))best=i});return best}
+$('#s-file').addEventListener('change',async e=>{
+  const box=$('#s-map');box.innerHTML='';box.classList.remove('hidden');
+  for(const f of e.target.files){
+    let grid=[];
+    try{
+      if(/\.csv$/i.test(f.name)){let t=await f.text();if(t.includes(String.fromCharCode(0xFFFD))){const b=await f.arrayBuffer();t=new TextDecoder('euc-kr').decode(b)}grid=parseCSV(t)}
+      else if(window.XLSX){const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});grid=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true,defval:''})}
+      else{toast('엑셀 읽기 기능이 없어요. CSV로 저장해 올려 주세요.');continue}
+    }catch(err){toast(f.name+' 파일을 읽지 못했어요.');continue}
+    grid=grid.filter(r=>r.some(c=>String(c).trim()!==''));if(grid.length<2){toast(f.name+'에 내용이 없어요.');continue}
+    let hi=0;for(let i=0;i<Math.min(10,grid.length);i++){if(guess(grid[i],['날짜','일자','일시','주문일','결제일'])>=0){hi=i;break}}
+    const head=grid[hi].map(String),body=grid.slice(hi+1);
+    const di=guess(head,['날짜','일자','일시','주문일','결제일','정산일']),ai=guess(head,['결제금액','정산금액','판매금액','매출','금액','합계']);
+    const opts=head.map((h,i)=>`<option value="${i}">${esc(h||('칸 '+(i+1)))}</option>`).join('');
+    const card=document.createElement('div');card.className='reply';
+    const id='m'+Math.random().toString(36).slice(2,7);
+    card.innerHTML=`<b>${esc(f.name)} · ${body.length}줄</b><div class="row">
+      <label for="${id}d">날짜 칸<select id="${id}d">${opts}</select></label>
+      <label for="${id}a">금액 칸<select id="${id}a">${opts}</select></label>
+      <label for="${id}w">판매처 이름<input id="${id}w" value="${esc(f.name.replace(/\.[^.]+$/,'').slice(0,12))}"></label></div>
+      <div class="btns"><button class="b sm">이 파일 합치기</button></div>`;
+    box.appendChild(card);
+    if(di>=0)card.querySelector('#'+id+'d').value=di;if(ai>=0)card.querySelector('#'+id+'a').value=ai;
+    card.querySelector('button').addEventListener('click',ev=>{
+      const dI=+card.querySelector('#'+id+'d').value,aI=+card.querySelector('#'+id+'a').value,w=card.querySelector('#'+id+'w').value.trim()||'파일';
+      let added=0,skip=0;if(salesEx)sales=[];
+      body.forEach(r=>{const d=normDate(r[dI]),a=num(r[aI]);if(d&&a){sales.push({d,w,a});added++}else skip++});
+      saveSales();ev.target.disabled=true;ev.target.textContent='합쳤어요';
+      toast(`${added}건 합쳤어요`+(skip?` (날짜·금액이 없는 ${skip}줄은 뺐어요)`:''));
+    });
+  }
+  e.target.value='';
+});
+
+/* ---------- ② 목록 ---------- */
+const LSAMPLE=`2026-10-15 쇼츠 썸네일 만드는 법: 16:9 크기 맞추기부터 글자 배치까지
+2026-10-15 AI로 영상 만드는 법: 대본 쓰기부터 업로드까지
+2026-10-13 쇼츠 부업 시작하는 법: 얼굴 공개 vs 비공개 채널
+2026-10-12 부업 소득 정리하는 법: 통장 분리와 기록표
+2026-10-12 블로그 글 누락 확인법: 검색 안 될 때 확인 순서
+2026-10-09 스마트스토어 초보가 흔히 하는 실수 5가지
+2026-10-09 스마트스토어 초보가 흔히 하는 실수 5가지
+2026-10-08 쿠팡 파트너스 시작 가이드
+댓글
+공유`;
+let listRows=[];
+function runList(){
+  const kw=$('#l-kw').value.trim();const seen=new Set();let lines=$('#l-in').value.split(/\n/).map(s=>s.replace(/\s+/g,' ').trim()).filter(Boolean);
+  const before=lines.length;
+  if($('#l-short').checked)lines=lines.filter(s=>s.length>=5);
+  if(kw)lines=lines.filter(s=>s.includes(kw));
+  if($('#l-dup').checked)lines=lines.filter(s=>seen.has(s)?false:(seen.add(s),true));
+  listRows=lines.map((s,i)=>{const d=normDate(s);const url=(s.match(/https?:\/\/\S+/)||[''])[0];
+    let title=s.replace(url,'').replace(/(20\d{2})[.\-\/년\s]*(\d{1,2})[.\-\/월\s]*(\d{1,2})일?/,'').trim();return [i+1,d,title,url]});
+  $('#l-stats').innerHTML=`<div class="stat"><small>정리된 줄</small><b>${listRows.length}개</b></div><div class="stat"><small>뺀 줄</small><b>${before-listRows.length}개</b></div>`;
+  $('#l-tbl').innerHTML='<tr><th class="n">번호</th><th>날짜</th><th>제목</th><th>주소</th></tr>'+listRows.map(r=>`<tr><td class="n">${r[0]}</td><td>${r[1]||'-'}</td><td>${esc(r[2])}</td><td>${esc(r[3])}</td></tr>`).join('');
+  const by={};listRows.forEach(r=>{const k=r[1]||'날짜 없음';by[k]=(by[k]||0)+1});
+  $('#l-sum').innerHTML='<tr><th>날짜</th><th class="n">글 수</th></tr>'+Object.entries(by).sort((a,b)=>b[0].localeCompare(a[0])).map(([d,c])=>`<tr><td>${d}</td><td class="n">${c}</td></tr>`).join('');
+}
+$('#l-run').addEventListener('click',()=>{runList();toast('정리했어요.')});
+$('#l-sample').addEventListener('click',()=>{$('#l-in').value=LSAMPLE;runList()});
+const listOut=()=>[['번호','날짜','제목','주소'],...listRows];
+$('#l-copy').addEventListener('click',()=>copy(tsv(listOut())));
+$('#l-save').addEventListener('click',()=>{if(!window.XLSX){toast('표 복사를 써 주세요.');return}
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(listOut()),'목록');
+  const by={};listRows.forEach(r=>{const k=r[1]||'날짜 없음';by[k]=(by[k]||0)+1});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['날짜','글 수'],...Object.entries(by)]),'날짜별 요약');
+  saveFile('목록정리.xlsx',new Blob([XLSX.write(wb,{bookType:'xlsx',type:'array'})],{type:XLSX_TYPE}));
+});
+
+/* ---------- ③ 견적서 ---------- */
+function hangul(n){n=Math.round(n);if(n===0)return '영';const d=['','일','이','삼','사','오','육','칠','팔','구'],u=['','십','백','천'],b=['','만','억','조'];
+  let s='',g=0;while(n>0){const part=n%10000;if(part){let p='';String(part).padStart(4,'0').split('').forEach((c,i)=>{const k=+c;if(k)p+=(k===1&&i<3?'':d[k])+u[3-i]});s=p+b[g]+s}n=Math.floor(n/10000);g++}return s}
+let qItems=store.get('qitems',[{n:'수제 청귤청 500ml',q:10,p:15000},{n:'선물 포장',q:10,p:2000}]);
+const qInfo=store.get('qinfo',{me:'',tel:'',to:'',vat:'add',memo:'견적 유효기간 14일'});
+['me','tel','to','vat','memo'].forEach(k=>{$('#q-'+k).value=qInfo[k]||''});
+function renderItems(){
+  $('#q-items').innerHTML='<div class="item note"><span>품목</span><span>수량</span><span>단가(원)</span><span></span></div>'+
+  qItems.map((it,i)=>`<div class="item"><input aria-label="품목" data-i="${i}" data-k="n" value="${esc(it.n)}"><input aria-label="수량" inputmode="numeric" data-i="${i}" data-k="q" value="${it.q}"><input aria-label="단가" inputmode="numeric" data-i="${i}" data-k="p" value="${it.p}"><button class="x" data-qdel="${i}" aria-label="품목 삭제">×</button></div>`).join('');
+}
+function quoteCalc(){
+  const vat=$('#q-vat').value;let line=qItems.map(it=>({...it,amt:num(it.q)*num(it.p)}));let sum=line.reduce((s,r)=>s+r.amt,0);
+  let supply,tax;if(vat==='add'){supply=sum;tax=Math.floor(sum*0.1)}else if(vat==='inc'){supply=Math.round(sum/1.1);tax=sum-supply}else{supply=sum;tax=0}
+  return {line,supply,tax,total:supply+tax,vat};
+}
+function renderQuote(){
+  const c=quoteCalc(),me=$('#q-me').value||'(우리 가게 이름)',to=$('#q-to').value||'(받는 분)',qday=today();
+  $('#q-sheet').innerHTML=`<h4>견적서</h4>
+   <div class="row" style="font-size:14px"><div><b>${esc(to)}</b> 귀하<br>견적일: ${qday}</div><div style="text-align:right">공급자: <b>${esc(me)}</b><br>${esc($('#q-tel').value)}</div></div>
+   <div class="big">합계금액: 일금 ${hangul(c.total)}원정 (₩${c.total.toLocaleString('ko-KR')})</div>
+   <div class="tbl" style="border-color:#d9d4c5"><table><tr><th>품목</th><th class="n">수량</th><th class="n">단가</th><th class="n">금액</th></tr>
+   ${c.line.map(r=>`<tr><td>${esc(r.n)}</td><td class="n">${num(r.q).toLocaleString('ko-KR')}</td><td class="n">${num(r.p).toLocaleString('ko-KR')}</td><td class="n">${r.amt.toLocaleString('ko-KR')}</td></tr>`).join('')}
+   <tr><td colspan="3">공급가액</td><td class="n">${c.supply.toLocaleString('ko-KR')}</td></tr>
+   <tr><td colspan="3">부가세${c.vat==='none'?' (없음)':''}</td><td class="n">${c.tax.toLocaleString('ko-KR')}</td></tr>
+   <tr class="sum"><td colspan="3">합계</td><td class="n">${c.total.toLocaleString('ko-KR')}</td></tr></table></div>
+   ${$('#q-memo').value?`<div style="font-size:14px">※ ${esc($('#q-memo').value)}</div>`:''}`;
+  const qi={me:$('#q-me').value,tel:$('#q-tel').value,to:$('#q-to').value,vat:$('#q-vat').value,memo:$('#q-memo').value};
+  if(JSON.stringify(qItems)!==JSON.stringify(store.get('qitems',null))||JSON.stringify(qi)!==JSON.stringify(store.get('qinfo',null))){store.set('qitems',qItems);store.set('qinfo',qi);touch()}
+}
+$('#q-items').addEventListener('input',e=>{const t=e.target;if(t.dataset.i==null)return;const it=qItems[+t.dataset.i];it[t.dataset.k]=t.dataset.k==='n'?t.value:num(t.value);renderQuote()});
+$('#q-items').addEventListener('click',e=>{const b=e.target.closest('[data-qdel]');if(!b)return;qItems.splice(+b.dataset.qdel,1);renderItems();renderQuote()});
+$('#q-add').addEventListener('click',()=>{qItems.push({n:'',q:1,p:0});renderItems();renderQuote()});
+['me','tel','to','vat','memo'].forEach(k=>$('#q-'+k).addEventListener('input',renderQuote));
+const quoteRows=()=>{const c=quoteCalc();return [['견적서'],['받는 분',$('#q-to').value],['공급자',$('#q-me').value,$('#q-tel').value],['견적일',today()],[],['품목','수량','단가','금액'],...c.line.map(r=>[r.n,num(r.q),num(r.p),r.amt]),[],['공급가액','','',c.supply],['부가세','','',c.tax],['합계','','',c.total],['합계(한글)','일금 '+hangul(c.total)+'원정'],['메모',$('#q-memo').value]]};
+$('#q-copy').addEventListener('click',()=>copy(tsv(quoteRows())));
+$('#q-save').addEventListener('click',()=>saveXlsx('견적서_'+($('#q-to').value||'고객')+'.xlsx',quoteRows()));
+
+/* ---------- ④ 리뷰 ---------- */
+const RSAMPLE=`청귤청 너무 맛있어요! 탄산수에 타 먹으니 최고예요
+배송이 생각보다 늦었어요. 맛은 괜찮네요
+병이 깨져서 왔어요. 실망입니다
+선물했는데 포장이 예뻐서 좋아했어요
+그냥 무난해요`;
+const NEG=['늦','별로','실망','아쉽','불친절','깨','파손','환불','맛없','상했','이상','불만','최악','다시는','샜','새서','누락','안 와'];
+const POS=['맛있','좋','최고','예쁘','추천','만족','감사','재구매','또 살','친절','빠르','훌륭','짱'];
+const DELIV=['배송','늦','택배','도착'],BROKE=['깨','파손','샜','새서','상했'];
+function classify(t){const n=NEG.filter(w=>t.includes(w)).length,p=POS.filter(w=>t.includes(w)).length;if(n>0&&n>=p)return 'bad';if(p>0)return 'good';return 'mid'}
+function makeReply(t,kind,shop,tone){
+  const S=shop||'저희 가게',w=tone==='warm';
+  const has=a=>a.some(x=>t.includes(x));
+  if(kind==='good')return w?`좋은 후기 정말 감사해요! ${S}를 찾아 주셔서 큰 힘이 됩니다.\n${t.includes('선물')?'선물로 좋은 마음 전하셨다니 저희도 기뻐요. ':''}다음에도 맛있게 준비해 둘게요 :)`:`소중한 후기 감사드립니다. ${S}를 이용해 주셔서 감사합니다.\n앞으로도 만족하실 수 있도록 정성껏 준비하겠습니다.`;
+  if(kind==='bad'){let fix='';if(has(BROKE))fix='파손된 상품은 사진을 보내 주시면 바로 교환이나 환불로 도와드리겠습니다. ';else if(has(DELIV))fix='배송이 늦어 불편을 드렸습니다. 발송 과정을 다시 점검하겠습니다. ';else fix='말씀해 주신 부분은 꼭 고치겠습니다. ';
+    return w?`불편을 드려 정말 죄송해요. ${fix}\n문의하기로 연락 주시면 빠르게 도와드릴게요.`:`이용에 불편을 드려 진심으로 사과드립니다. ${fix}\n고객센터(문의하기)로 연락 주시면 신속히 처리해 드리겠습니다.`}
+  return w?`후기 남겨 주셔서 감사해요! 다음엔 '최고예요' 소리 들을 수 있게 더 신경 쓸게요. 아쉬운 점 있으면 편하게 말씀해 주세요.`:`후기 감사드립니다. 더 만족하실 수 있도록 개선하겠습니다. 의견이 있으시면 언제든 말씀해 주세요.`;
+}
+let SAMPLE_AI=null; /* 깃허브판에는 AI 다듬기가 없어요 */
+function runReview(){
+  const shop=$('#r-shop').value.trim(),tone=$('#r-tone').value;
+  const list=$('#r-in').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  const label={good:['good','칭찬'],mid:['warn','보통'],bad:['bad','불만']};
+  $('#r-out').innerHTML=list.map((t,i)=>{const k=classify(t);return `<div class="reply"><div><span class="pill ${label[k][0]}">${label[k][1]}</span></div><q>${esc(t)}</q><p id="rp${i}">${esc(makeReply(t,k,shop,tone))}</p>
+   <div class="btns"><button class="b sm gold" data-rcopy="${i}">답글 복사</button><button class="b sm ghost ai ${SAMPLE_AI?'':'hidden'}" data-rai="${i}" data-src="${esc(t)}">AI로 다듬기</button></div></div>`}).join('')||'<p class="note">리뷰를 한 줄에 하나씩 넣어 주세요.</p>';
+}
+$('#r-run').addEventListener('click',runReview);
+$('#r-sample').addEventListener('click',()=>{$('#r-in').value=RSAMPLE;runReview()});
+$('#r-out').addEventListener('click',async e=>{
+  const c=e.target.closest('[data-rcopy]');if(c){copy($('#rp'+c.dataset.rcopy).textContent);return}
+  const a=e.target.closest('[data-rai]');if(!a||!SAMPLE_AI)return;
+  const p=$('#rp'+a.dataset.rai);a.disabled=true;a.textContent='다듬는 중…';
+  try{const r=await SAMPLE_AI(`당신은 작은 가게 사장님의 리뷰 답글을 다듬는 도우미입니다. 아래 리뷰에 대한 답글 초안을 자연스럽고 ${$('#r-tone').value==='warm'?'다정한':'정중한'} 한국어 존댓말로 3문장 이내로 고쳐 주세요. 사실을 지어내지 말고, 할인·보상 약속은 초안에 있는 것만 쓰세요. 답글 문장만 출력하세요.\n\n가게 이름: ${$('#r-shop').value||'저희 가게'}\n리뷰: ${a.dataset.src}\n초안: ${p.textContent}`,{modelTier:'quick'});
+    if(r&&r.text)p.textContent=r.text.trim();a.textContent='다시 다듬기';}
+  catch(err){a.textContent='AI로 다듬기';toast(err&&err.code==='rate_limited'?'잠시 뒤에 다시 눌러 주세요.':'AI 다듬기를 쓸 수 없어요. 초안을 그대로 써 주세요.');if(err&&err.code==='not_granted')document.querySelectorAll('.ai').forEach(b=>b.classList.add('hidden'))}
+  a.disabled=false;
+});
+
+/* ---------- ⑤ 가격 ---------- */
+let prices=store.get('prices',null);let priceEx=false;
+if(!prices){priceEx=true;prices=[{n:'청귤청 500ml',m:15000,w:'A스토어',t:13900,d:'2026-11-16'},{n:'자몽청 500ml',m:14000,w:'B마켓',t:14200,d:'2026-11-16'},{n:'레몬청 1L',m:22000,w:'A스토어',t:23500,d:'2026-11-15'}];}
+function status(m,t){const r=(m-t)/t*100;if(r>3)return ['bad','비쌈',r];if(r<-3)return ['good','저렴',r];return ['warn','비슷',r]}
+function renderPrice(){
+  $('#p-ex').classList.toggle('hidden',!priceEx);
+  const latest={};prices.forEach((p,i)=>{const k=p.n+'|'+p.w;if(!latest[k]||latest[k].d<=p.d)latest[k]={...p,i}});
+  const rows=Object.values(latest).map(p=>({...p,s:status(p.m,p.t)})).sort((a,b)=>b.s[2]-a.s[2]);
+  const cnt=k=>rows.filter(r=>r.s[1]===k).length;
+  $('#p-stats').innerHTML=`<div class="stat"><small>비교 중</small><b>${rows.length}개</b></div><div class="stat"><small>내가 비쌈</small><b style="color:var(--bad)">${cnt('비쌈')}개</b></div><div class="stat"><small>저렴·비슷</small><b>${cnt('저렴')+cnt('비슷')}개</b></div>`;
+  $('#p-tbl').innerHTML='<tr><th>상품</th><th>경쟁사</th><th class="n">내 가격</th><th class="n">경쟁사</th><th>상태</th><th>확인일</th><th></th></tr>'+
+   rows.map(r=>`<tr><td>${esc(r.n)}</td><td>${esc(r.w)}</td><td class="n">${r.m.toLocaleString('ko-KR')}</td><td class="n">${r.t.toLocaleString('ko-KR')}</td><td><span class="pill ${r.s[0]}">${r.s[1]} ${r.s[2]>0?'+':''}${r.s[2].toFixed(1)}%</span></td><td>${r.d.slice(5).replace('-','.')}</td><td><button class="x" data-pdel="${r.i}" aria-label="삭제">×</button></td></tr>`).join('');
+  return rows;
+}
+function savePrice(){priceEx=false;store.set('prices',prices);renderPrice();touch()}
+$('#p-add').addEventListener('click',()=>{const n=$('#p-name').value.trim(),m=num($('#p-mine').value),w=$('#p-who').value.trim()||'경쟁사',t=num($('#p-their').value);
+  if(!n||!m||!t){toast('상품명과 두 가격을 넣어 주세요.');return}
+  if(priceEx)prices=[];prices.push({n,m,w,t,d:today()});$('#p-their').value='';savePrice();toast('기록했어요.')});
+$('#p-tbl').addEventListener('click',e=>{const b=e.target.closest('[data-pdel]');if(!b)return;if(priceEx)prices=[];else prices.splice(+b.dataset.pdel,1);savePrice()});
+$('#p-copy').addEventListener('click',()=>{const rows=renderPrice();copy(tsv([['상품','경쟁사','내 가격','경쟁사 가격','상태','차이(%)','확인일'],...rows.map(r=>[r.n,r.w,r.m,r.t,r.s[1],r.s[2].toFixed(1),r.d])]))});
+$('#p-clear').addEventListener('click',()=>{const b=$('#p-clear');if(b.dataset.sure){prices=[];savePrice();b.textContent='모두 지우기';delete b.dataset.sure}else{b.dataset.sure='1';b.textContent='한 번 더 누르면 지워져요';setTimeout(()=>{delete b.dataset.sure;b.textContent='모두 지우기'},3000)}});
+
+/* ---------- ⑥ 연동 ---------- */
+let booting=true,REF=null,pushTimer=null,writing=false,again=false;
+function local(){return {v:1,sales:store.get('sales',null),prices:store.get('prices',null),qitems:store.get('qitems',null),qinfo:store.get('qinfo',null),updatedAt:store.get('updatedAt',0)}}
+function touch(){if(booting)return;store.set('updatedAt',Date.now());renderSyncSum();if(REF){clearTimeout(pushTimer);pushTimer=setTimeout(push,1500)}}
+function hhmm(t){if(!t)return '-';const d=new Date(t);return (d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+function setState(){}
+function applyData(r,quiet){
+  if(!r)return;
+  if(Array.isArray(r.sales)){store.set('sales',r.sales);sales=r.sales;salesEx=false}
+  if(Array.isArray(r.prices)){store.set('prices',r.prices);prices=r.prices;priceEx=false}
+  if(Array.isArray(r.qitems)){store.set('qitems',r.qitems);qItems=r.qitems}
+  if(r.qinfo&&typeof r.qinfo==='object'){store.set('qinfo',r.qinfo);['me','tel','to','vat','memo'].forEach(k=>{$('#q-'+k).value=r.qinfo[k]||(k==='vat'?'add':'')})}
+  store.set('updatedAt',r.updatedAt||Date.now());
+  const b=booting;booting=true;renderSales();renderItems();renderQuote();renderPrice();renderSyncSum();booting=b;
+  if(!quiet)toast('다른 기기의 기록을 불러왔어요.');
+}
+function push(){}
+function renderSyncSum(){
+  const l=local();
+  $('#y-sum').innerHTML=`<span>매출 기록</span><b>${Array.isArray(l.sales)?l.sales.length+'건':'예시만 있음'}</b><span>가격 기록</span><b>${Array.isArray(l.prices)?l.prices.length+'건':'예시만 있음'}</b><span>견적서 품목</span><b>${Array.isArray(l.qitems)?l.qitems.length+'개':'-'}</b><span>마지막 수정</span><b>${hhmm(l.updatedAt)}</b>`;
+}
+function encode(o){return 'GGO1:'+btoa(unescape(encodeURIComponent(JSON.stringify(o))))}
+function decode(t){t=String(t).trim();if(!t.startsWith('GGO1:'))throw 0;return JSON.parse(decodeURIComponent(escape(atob(t.slice(5)))))}
+$('#y-copy').addEventListener('click',()=>{const l=local();if(!l.updatedAt){toast('아직 내 기록이 없어요. 예시 말고 기록을 먼저 넣어 주세요.');return}copy(encode(l))});
+$('#y-save').addEventListener('click',()=>{const l=local();if(!l.updatedAt){toast('아직 내 기록이 없어요. 예시 말고 기록을 먼저 넣어 주세요.');return}
+  saveFile('구경GO_백업_'+today()+'.txt',encode(l),'text/plain;charset=utf-8')});
+$('#y-file').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;let r;
+  try{r=decode(await f.text())}catch(err){toast('구경GO 백업 파일이 아니에요. 파일을 다시 골라 주세요.');e.target.value='';return}
+  r.updatedAt=Date.now();applyData(r,true);e.target.value='';toast('백업 파일을 불러왔어요.')});
+$('#y-restore').addEventListener('click',()=>{let r;try{r=decode($('#y-in').value)}catch(e){toast('백업 코드가 맞지 않아요. GGO1:로 시작하는 코드 전체를 붙여넣어 주세요.');return}
+  r.updatedAt=Date.now();applyData(r,true);$('#y-in').value='';toast('불러왔어요.')});
+document.addEventListener('click',e=>{const t=e.target.closest('[data-hj]');if(t){const el=document.getElementById(t.dataset.hj);if(el)el.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})}});
+
+/* 단축키 */
+document.addEventListener('keydown',e=>{
+  if(e.altKey&&!e.ctrlKey&&/^[0-6]$/.test(e.key)){e.preventDefault();go(views[+e.key]);return}
+  if(e.altKey&&!e.ctrlKey&&(e.key==='h'||e.key==='H')){e.preventDefault();go('help');return}
+  if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){const v=views.find(x=>$('#v-'+x).classList.contains('on'));
+    const m={list:'#l-run',review:'#r-run',sales:'#s-add',price:'#p-add'};if(m[v]){e.preventDefault();$(m[v]).click()}}
+});
+/* 새 기능 안내 창 (한 번만) */
+if(!store.get('seen-v1.3',false)){$('#news').classList.remove('hidden');$('#news-ok').focus()}
+$('#news-ok').addEventListener('click',()=>{store.set('seen-v1.3',true);$('#news').classList.add('hidden')});
+/* 시작 */
+$('#s-d').value=today();
+renderSales();$('#l-in').value=LSAMPLE;runList();renderItems();renderQuote();$('#r-in').value=RSAMPLE;runReview();renderPrice();
+renderSyncSum();booting=false;
+go(location.hash.slice(1)||'home');
+})();
+</script>
+</body>
+</html>
